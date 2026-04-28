@@ -1,0 +1,48 @@
+# Dependencias
+node_modules/
+
+# Archivos de build
+dist/
+.astro/
+
+# Cache
+.cache/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.*
+
+# Guía local (solo para aprendizaje, no se sube al repo)
+guia/
+
+# Notas y guías locales (no subir al repo público)
+dev-notes/
+
+# Local documentation (not for GitHub)
+PROYECTO-NPM-ASTRO-SEO.md
+USAGE-GUIDE.md
+
+# Lock files (optional - some prefer to include them)
+pnpm-lock.yaml
+
+# Testing
+coverage/
+
+# Otros
+*.local

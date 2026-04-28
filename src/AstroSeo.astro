@@ -1,0 +1,8 @@
+---
+import type { AstroSeoProps } from "./types";
+import { buildTags } from "./utils/buildTags";
+
+export interface Props extends AstroSeoProps {}
+---
+
+<Fragment set:html={buildTags(Astro.props)} />

@@ -1,0 +1,21 @@
+# Don't include in npm package
+PROYECTO-NPM-ASTRO-SEO.md
+USAGE-GUIDE.md
+.gitignore
+.vscode/
+.idea/
+*.log
+coverage/
+.env*
+node_modules/
+pnpm-lock.yaml
+test/
+
+# Dev-only type declarations — the Astro language server in the user's project
+# already injects Fragment, Astro, and other globals automatically.
+# Shipping these files can cause duplicate-identifier conflicts in user projects.
+src/astro.d.ts
+src/env.d.ts
+
+# Astro config — only needed for language server support during library development
+astro.config.mjs

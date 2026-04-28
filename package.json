@@ -1,0 +1,69 @@
+{
+  "name": "@northsoon/astro-seo",
+  "version": "2.0.5",
+  "description": "SEO component for Astro with full TypeScript support, auto-generated .d.ts declaration files, and IDE autocompletion",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "astro": "./index.ts",
+      "import": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./types": {
+      "types": "./dist/src/types.d.ts",
+      "import": "./src/types.ts"
+    }
+  },
+  "files": [
+    "src/AstroSeo.astro",
+    "src/types.ts",
+    "src/utils/buildTags.ts",
+    "dist",
+    "index.ts"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "astro",
+    "astro-component",
+    "seo",
+    "meta-tags",
+    "open-graph",
+    "twitter-cards",
+    "typescript",
+    "withastro"
+  ],
+  "author": "VVV-WIT-07-DEV <https://github.com/VVV-WIT-07-DEV>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VVV-WIT-07-DEV/astro-seo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/VVV-WIT-07-DEV/astro-seo/issues"
+  },
+  "homepage": "https://github.com/VVV-WIT-07-DEV/astro-seo#readme",
+  "peerDependencies": {
+    "astro": "^4.0.0 || ^5.0.0 || ^6.0.0"
+  },
+  "dependencies": {
+    "html-escaper": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/html-escaper": "^3.0.4",
+    "astro": "^6.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.5"
+  },
+  "vitest": {
+    "environment": "node"
+  }
+}
