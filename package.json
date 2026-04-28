@@ -1,6 +1,6 @@
 {
   "name": "@northsoon/astro-seo",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "SEO component for Astro with full TypeScript support, auto-generated .d.ts declaration files, and IDE autocompletion",
   "type": "module",
   "main": "./index.ts",
@@ -22,11 +22,13 @@
     "src/AstroSeo.astro",
     "src/types.ts",
     "src/utils/buildTags.ts",
+    "src/utils/buildJsonLd.ts",
     "dist",
     "index.ts"
   ],
   "scripts": {
-    "build": "tsc",
+    "clean": "node -e \"require('fs').rmSync('dist', {recursive:true, force:true})\"",
+    "build": "npm run clean && tsc",
     "prepublishOnly": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest"
