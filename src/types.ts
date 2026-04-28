@@ -144,4 +144,5 @@ export interface AstroSeoProps {
   twitter?: Twitter;
   additionalMetaTags?: ReadonlyArray<MetaTag>;
   additionalLinkTags?: ReadonlyArray<LinkTag>;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }

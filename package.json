@@ -1,6 +1,6 @@
 {
   "name": "@northsoon/astro-seo",
-  "version": "2.0.5",
+  "version": "2.1.0",
   "description": "SEO component for Astro with full TypeScript support, auto-generated .d.ts declaration files, and IDE autocompletion",
   "type": "module",
   "main": "./index.ts",
@@ -41,16 +41,16 @@
     "typescript",
     "withastro"
   ],
-  "author": "VVV-WIT-07-DEV <https://github.com/VVV-WIT-07-DEV>",
+  "author": "Northsoon Studio <https://github.com/northsoon-studio>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VVV-WIT-07-DEV/astro-seo.git"
+    "url": "git+https://github.com/northsoon-studio/astro-seo"
   },
   "bugs": {
-    "url": "https://github.com/VVV-WIT-07-DEV/astro-seo/issues"
+    "url": "https://github.com/northsoon-studio/astro-seo/issues"
   },
-  "homepage": "https://github.com/VVV-WIT-07-DEV/astro-seo#readme",
+  "homepage": "https://github.com/northsoon-studio/astro-seo#readme",
   "peerDependencies": {
     "astro": "^4.0.0 || ^5.0.0 || ^6.0.0"
   },

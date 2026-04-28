@@ -1,8 +1,12 @@
 ---
 import type { AstroSeoProps } from "./types";
 import { buildTags } from "./utils/buildTags";
+import { buildJsonLd } from "./utils/buildJsonLd";
 
 export interface Props extends AstroSeoProps {}
+
+const { jsonLd, ...seoProps } = Astro.props;
 ---
 
-<Fragment set:html={buildTags(Astro.props)} />
+<Fragment set:html={buildTags(seoProps)} />
+{jsonLd && <Fragment set:html={buildJsonLd(jsonLd)} />}

@@ -4,7 +4,7 @@
 
 An enhanced, maintained version of `@astrolib/seo` with properly exported TypeScript types, declaration files (`.d.ts`), and better documentation.
 
-> **v2.0.4** — The component is exported as `AstroHead`. If you were using `AstroSeo` from a previous version, see the [migration guide](#-migration-from-v1) below.
+> **v2.1.0** — The component is exported as `AstroHead`. If you were using `AstroSeo` from a previous version, see the [migration guide](#-migration-from-v1) below.
 
 ## ✨ Features
 
@@ -21,6 +21,7 @@ An enhanced, maintained version of `@astrolib/seo` with properly exported TypeSc
 - ✅ Compatible with Astro 4.x, 5.x, and 6.x
 - ✅ Compatible with TypeScript 5.x and 6.x
 - ✅ Unit tested with Vitest
+- ✅ **JSON-LD support** — pass any Schema.org object as a prop, rendered as `<script type="application/ld+json">`
 
 ## 🔧 How TypeScript Types Work
 
@@ -204,7 +205,54 @@ import { AstroHead } from "@northsoon/astro-seo";
 />
 ```
 
-## 📝 TypeScript Types
+## � JSON-LD (Structured Data)
+
+Pass any [Schema.org](https://schema.org) object to generate a `<script type="application/ld+json">` tag. This enables Google Rich Results (star ratings, breadcrumbs, FAQ dropdowns, etc.).
+
+```astro
+<AstroHead
+  title="Northsoon Studio"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Northsoon Studio",
+    "url": "https://northsoon.com",
+    "telephone": "+1-780-555-0100",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Grande Prairie",
+      "addressRegion": "AB",
+      "addressCountry": "CA"
+    }
+  }}
+/>
+```
+
+For multiple schemas on the same page, pass an array:
+
+```astro
+<AstroHead
+  title="My Site"
+  jsonLd={[
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Northsoon Studio",
+      "url": "https://northsoon.com"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Northsoon Studio",
+      "url": "https://northsoon.com"
+    }
+  ]}
+/>
+```
+
+Validate your structured data at [Google Rich Results Test](https://search.google.com/test/rich-results).
+
+## �📝 TypeScript Types
 
 All types are exported and **work automatically** - no additional setup needed!
 
@@ -320,10 +368,15 @@ This installs `@astrojs/check` and `typescript` if missing.
 # Check installed version
 npm list @northsoon/astro-seo
 
-# Should show @northsoon/astro-seo@2.0.5 or higher
+# Should show @northsoon/astro-seo@2.1.0 or higher
 ```
 
 ## 📋 Changelog
+
+### v2.1.0
+
+- Feat: `jsonLd` prop — pass any Schema.org object (or array of objects) to generate a `<script type="application/ld+json">` tag automatically
+- Test: added 6 unit tests for `buildJsonLd` covering LocalBusiness, WebSite, BreadcrumbList, FAQPage, and arrays
 
 ### v2.0.5
 
