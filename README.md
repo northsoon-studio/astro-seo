@@ -320,7 +320,7 @@ This installs `@astrojs/check` and `typescript` if missing.
 # Check installed version
 npm list @northsoon/astro-seo
 
-# Should show @northsoon/astro-seo@2.0.4 or higher
+# Should show @northsoon/astro-seo@2.0.5 or higher
 ```
 
 ## 📋 Changelog
@@ -356,7 +356,7 @@ npm list @northsoon/astro-seo
 
 ## �📄 License
 
-MIT © [Manuel Caballero](https://github.com/ByManuelCaballero)
+MIT © [Manuel Caballero](https://github.com/VVV-WIT-07-DEV)
 
 Made with ❤️ by [Northsoon](https://northsoon.com)
 
