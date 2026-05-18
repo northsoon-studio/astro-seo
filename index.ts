@@ -7,3 +7,4 @@ export { default } from "./src/AstroSeo.astro";
 
 // Type exports
 export * from "./src/types";
+export * from "./src/types-extended";

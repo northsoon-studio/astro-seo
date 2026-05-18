@@ -63,7 +63,12 @@ export interface OpenGraphVideo {
 export interface Twitter {
   handle?: string;
   site?: string;
-  cardType?: string;
+  cardType?:
+    | "summary"
+    | "summary_large_image"
+    | "app"
+    | "player"
+    | (string & {});
 }
 
 export interface MobileAlternate {

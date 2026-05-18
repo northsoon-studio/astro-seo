@@ -33,6 +33,12 @@ describe("buildTags — description", () => {
     expect(result).toContain('name="description"');
     expect(result).toContain('content="Test description"');
   });
+
+  it("escapes dangerous HTML in description (XSS protection)", () => {
+    const result = buildTags({ description: '"><script>alert(1)</script>' });
+    expect(result).not.toContain("<script>");
+    expect(result).toContain("&lt;script&gt;");
+  });
 });
 
 describe("buildTags — robots", () => {
@@ -175,5 +181,54 @@ describe("buildTags — additionalMetaTags", () => {
       additionalMetaTags: [{ property: "fb:admins", content: "12345" }],
     });
     expect(result).toContain('property="fb:admins"');
+  });
+});
+
+describe("buildTags — additionalLinkTags", () => {
+  it("generates link tag with rel and href", () => {
+    const result = buildTags({
+      additionalLinkTags: [{ rel: "icon", href: "/favicon.ico" }],
+    });
+    expect(result).toContain('rel="icon"');
+    expect(result).toContain('href="/favicon.ico"');
+  });
+
+  it("generates link tag with optional attributes (sizes, type, crossOrigin)", () => {
+    const result = buildTags({
+      additionalLinkTags: [
+        {
+          rel: "apple-touch-icon",
+          href: "/apple-touch-icon.png",
+          sizes: "180x180",
+          type: "image/png",
+          crossOrigin: "anonymous",
+        },
+      ],
+    });
+    expect(result).toContain('sizes="180x180"');
+    expect(result).toContain('type="image/png"');
+    expect(result).toContain('crossorigin="anonymous"');
+  });
+});
+
+describe("buildTags — facebook", () => {
+  it("generates fb:app_id meta tag", () => {
+    const result = buildTags({ facebook: { appId: "123456789" } });
+    expect(result).toContain('property="fb:app_id"');
+    expect(result).toContain('content="123456789"');
+  });
+});
+
+describe("buildTags — mobileAlternate", () => {
+  it("generates alternate link for mobile with media query", () => {
+    const result = buildTags({
+      mobileAlternate: {
+        media: "only screen and (max-width: 640px)",
+        href: "https://m.northsoon.com/page",
+      },
+    });
+    expect(result).toContain('rel="alternate"');
+    expect(result).toContain('media="only screen and (max-width: 640px)"');
+    expect(result).toContain('href="https://m.northsoon.com/page"');
   });
 });

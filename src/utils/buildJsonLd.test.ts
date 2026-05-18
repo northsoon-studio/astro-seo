@@ -77,6 +77,15 @@ describe("buildJsonLd", () => {
     expect(result).toContain('"position":1');
   });
 
+  it("escapes </script> to prevent XSS injection", () => {
+    const result = buildJsonLd({
+      "@context": "https://schema.org",
+      name: '</script><script>alert("xss")</script>',
+    });
+    expect(result).not.toContain("</script><script>");
+    expect(result).toContain("\\u003C/script\\u003E");
+  });
+
   it("serializes an FAQPage correctly", () => {
     const result = buildJsonLd({
       "@context": "https://schema.org",

@@ -4,7 +4,7 @@
 
 An enhanced, maintained version of `@astrolib/seo` with properly exported TypeScript types, declaration files (`.d.ts`), and better documentation.
 
-> **v2.1.0** — The component is exported as `AstroHead`. If you were using `AstroSeo` from a previous version, see the [migration guide](#-migration-from-v1) below.
+> **v2.1.2** — The component is exported as `AstroHead`. If you were using `AstroSeo` from a previous version, see the [migration guide](#-migration-from-v1) below.
 
 ## ✨ Features
 
@@ -38,7 +38,8 @@ This package includes pre-built declaration files (`.d.ts`) in the `dist/` folde
 ├── dist/
 │   ├── index.d.ts        ← Type declarations (auto-detected)
 │   └── src/
-│       └── types.d.ts    ← All exported types
+│       ├── types.d.ts          ← Core SEO types
+│       └── types-extended.d.ts ← Schema.org helper types
 ```
 
 ## 📦 Installation
@@ -259,6 +260,7 @@ All types are exported and **work automatically** - no additional setup needed!
 ```typescript
 import { AstroHead } from "@northsoon/astro-seo";
 import type {
+  // Core SEO types
   AstroSeoProps,
   OpenGraph,
   OpenGraphArticle,
@@ -268,6 +270,13 @@ import type {
   LinkTag,
   LanguageAlternate,
   AdditionalRobotsProps,
+  // Schema.org helper types (for JSON-LD)
+  ContactPoint,
+  OpeningHoursSpecification,
+  Offer,
+  AggregateRating,
+  Review,
+  Video,
 } from "@northsoon/astro-seo";
 
 // TypeScript validates your props
@@ -368,10 +377,18 @@ This installs `@astrojs/check` and `typescript` if missing.
 # Check installed version
 npm list @northsoon/astro-seo
 
-# Should show @northsoon/astro-seo@2.1.0 or higher
+# Should show @northsoon/astro-seo@2.1.2 or higher
 ```
 
 ## 📋 Changelog
+
+### v2.1.2
+
+- **Security fix:** `buildJsonLd` now escapes `<`, `>` and `&` as Unicode sequences (`\u003C`, `\u003E`, `\u0026`) to prevent XSS injection via early `</script>` tag closing
+- Fix: `types-extended.ts` types (`ContactPoint`, `OpeningHoursSpecification`, `Offer`, `AggregateRating`, `Review`, `Video`, and more) are now exported from the public API and fully accessible to TypeScript consumers
+- Improvement: `Twitter.cardType` now has IDE autocompletion with valid values (`"summary"`, `"summary_large_image"`, `"app"`, `"player"`) while still accepting any string
+- Test: added 5 new unit tests covering `facebook.appId`, `mobileAlternate`, `additionalLinkTags`, and XSS protection in `description`
+- Chore: added `.npmrc` with `node-linker=hoisted` to fix `@vitest/utils` resolution issue on Windows with pnpm + Node.js v24
 
 ### v2.1.0
 
