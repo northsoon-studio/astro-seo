@@ -64,8 +64,10 @@ export const buildTags = (config: AstroSeoProps): string => {
 
   // Title
   if (config.title) {
+    // split/join instead of replaceAll: replaceAll's replacement string interprets
+    // $&, $1, $$ as patterns, which would corrupt titles containing those sequences.
     const formattedTitle = config.titleTemplate
-      ? config.titleTemplate.replaceAll("%s", config.title)
+      ? config.titleTemplate.split("%s").join(config.title)
       : config.title;
     addTag(`<title>${escape(formattedTitle)}</title>`);
   }
@@ -295,6 +297,24 @@ export const buildTags = (config: AstroSeoProps): string => {
     if (config.twitter.handle) {
       addTag(createMetaTag({ name: "twitter:creator", content: config.twitter.handle }));
     }
+
+    // Twitter title/description/image: emit only when explicitly provided.
+    // Twitter auto-falls-back to og:* when these are absent, so duplicating og values
+    // here would just bloat the head with redundant tags.
+    if (config.twitter.title) {
+      addTag(createMetaTag({ name: "twitter:title", content: config.twitter.title }));
+    }
+
+    if (config.twitter.description) {
+      addTag(createMetaTag({ name: "twitter:description", content: config.twitter.description }));
+    }
+
+    if (config.twitter.image) {
+      addTag(createMetaTag({ name: "twitter:image", content: config.twitter.image }));
+      if (config.twitter.imageAlt) {
+        addTag(createMetaTag({ name: "twitter:image:alt", content: config.twitter.imageAlt }));
+      }
+    }
   }
 
   // Additional Meta Tags
@@ -310,6 +330,16 @@ export const buildTags = (config: AstroSeoProps): string => {
         attributes.property = metaTag.property;
       } else if ("httpEquiv" in metaTag && metaTag.httpEquiv) {
         attributes["http-equiv"] = metaTag.httpEquiv;
+      } else {
+        // No discriminator → skip. A <meta> tag without name/property/http-equiv
+        // is invalid HTML and silently emitting it would mask the user's mistake.
+        if (import.meta.env?.DEV) {
+          console.warn(
+            "[@northsoon/astro-seo] additionalMetaTags entry skipped: missing 'name', 'property', or 'httpEquiv'.",
+            metaTag,
+          );
+        }
+        return;
       }
 
       addTag(createMetaTag(attributes));

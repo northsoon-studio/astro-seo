@@ -69,6 +69,14 @@ export interface Twitter {
     | "app"
     | "player"
     | (string & {});
+  /** Overrides og:title for the Twitter card. Falls back to og:title / title if omitted. */
+  title?: string;
+  /** Overrides og:description for the Twitter card. Falls back to og:description / description if omitted. */
+  description?: string;
+  /** Absolute URL of the image. Falls back to the first og:image if omitted. */
+  image?: string;
+  /** Alt text for the Twitter image (required by Twitter for accessibility when image is set). */
+  imageAlt?: string;
 }
 
 export interface MobileAlternate {

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { buildTags } from "./buildTags";
 
 describe("buildTags — title", () => {
@@ -18,6 +18,23 @@ describe("buildTags — title", () => {
   it("does not generate <title> if title is not provided", () => {
     const result = buildTags({});
     expect(result).not.toContain("<title>");
+  });
+
+  it("titleTemplate preserves $ sequences in title (regression: replaceAll interprets $& as the match)", () => {
+    const result = buildTags({
+      title: "Save $& 50% — only $5",
+      titleTemplate: "%s | Site",
+    });
+    expect(result).toContain("<title>Save $&amp; 50% — only $5 | Site</title>");
+    expect(result).not.toContain("%s");
+  });
+
+  it("titleTemplate without %s emits the template unchanged", () => {
+    const result = buildTags({
+      title: "Home",
+      titleTemplate: "Static Title",
+    });
+    expect(result).toContain("<title>Static Title</title>");
   });
 
   it("escapes dangerous HTML in the title (XSS protection)", () => {
@@ -151,6 +168,48 @@ describe("buildTags — Twitter", () => {
     expect(result).toContain('name="twitter:creator"');
     expect(result).toContain('content="@northsoon"');
   });
+
+  it("generates twitter:title when provided", () => {
+    const result = buildTags({ twitter: { title: "Tweet title" } });
+    expect(result).toContain('name="twitter:title"');
+    expect(result).toContain('content="Tweet title"');
+  });
+
+  it("generates twitter:description when provided", () => {
+    const result = buildTags({ twitter: { description: "Tweet desc" } });
+    expect(result).toContain('name="twitter:description"');
+    expect(result).toContain('content="Tweet desc"');
+  });
+
+  it("generates twitter:image and twitter:image:alt when both provided", () => {
+    const result = buildTags({
+      twitter: {
+        image: "https://northsoon.com/twitter.png",
+        imageAlt: "Northsoon logo",
+      },
+    });
+    expect(result).toContain('name="twitter:image"');
+    expect(result).toContain('content="https://northsoon.com/twitter.png"');
+    expect(result).toContain('name="twitter:image:alt"');
+    expect(result).toContain('content="Northsoon logo"');
+  });
+
+  it("does not emit twitter:image:alt when image is absent", () => {
+    const result = buildTags({ twitter: { imageAlt: "orphan alt" } });
+    expect(result).not.toContain('name="twitter:image:alt"');
+  });
+
+  it("does not auto-duplicate og:* into twitter:* — Twitter falls back natively", () => {
+    const result = buildTags({
+      title: "Page",
+      description: "Desc",
+      openGraph: { images: [{ url: "https://x.com/og.png" }] },
+      twitter: { cardType: "summary_large_image" },
+    });
+    expect(result).not.toContain('name="twitter:title"');
+    expect(result).not.toContain('name="twitter:description"');
+    expect(result).not.toContain('name="twitter:image"');
+  });
 });
 
 describe("buildTags — languageAlternates", () => {
@@ -168,6 +227,13 @@ describe("buildTags — languageAlternates", () => {
 });
 
 describe("buildTags — additionalMetaTags", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("generates meta tag with name attribute", () => {
     const result = buildTags({
       additionalMetaTags: [{ name: "author", content: "Manuel Caballero" }],
@@ -181,6 +247,29 @@ describe("buildTags — additionalMetaTags", () => {
       additionalMetaTags: [{ property: "fb:admins", content: "12345" }],
     });
     expect(result).toContain('property="fb:admins"');
+  });
+
+  it("generates meta tag with http-equiv attribute", () => {
+    const result = buildTags({
+      additionalMetaTags: [
+        { httpEquiv: "x-ua-compatible", content: "IE=edge" },
+      ],
+    });
+    expect(result).toContain('http-equiv="x-ua-compatible"');
+    expect(result).toContain('content="IE=edge"');
+  });
+
+  it("skips entries missing name/property/httpEquiv instead of emitting invalid <meta>", () => {
+    // Forced cast: simulates a tag arriving from a non-typed source (CMS, JSON).
+    const result = buildTags({
+      additionalMetaTags: [
+        { content: "orphan" } as unknown as { name: string; content: string },
+        { name: "valid", content: "kept" },
+      ],
+    });
+    expect(result).not.toContain('content="orphan"');
+    expect(result).toContain('name="valid"');
+    expect(result).toContain('content="kept"');
   });
 });
 
