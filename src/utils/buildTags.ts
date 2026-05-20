@@ -6,23 +6,24 @@
 import { escape } from "html-escaper";
 import type { AstroSeoProps, OpenGraphMedia } from "../types";
 
-const createMetaTag = (attributes: Record<string, string>): string => {
+const createTag = (
+  name: "meta" | "link",
+  attributes: Record<string, string>,
+): string => {
   const attrs = Object.entries(attributes)
     .map(([key, value]) => `${key}="${escape(value)}"`)
     .join(" ");
-  return `<meta ${attrs}>`;
+  return `<${name} ${attrs}>`;
 };
 
-const createLinkTag = (attributes: Record<string, string>): string => {
-  const attrs = Object.entries(attributes)
-    .map(([key, value]) => `${key}="${escape(value)}"`)
-    .join(" ");
-  return `<link ${attrs}>`;
-};
+const createMetaTag = (attributes: Record<string, string>): string =>
+  createTag("meta", attributes);
 
-const createOpenGraphTag = (property: string, content: string): string => {
-  return createMetaTag({ property: `og:${property}`, content });
-};
+const createLinkTag = (attributes: Record<string, string>): string =>
+  createTag("link", attributes);
+
+const createOpenGraphTag = (property: string, content: string): string =>
+  createMetaTag({ property: `og:${property}`, content });
 
 const buildOpenGraphMediaTags = (
   mediaType: "image" | "video",

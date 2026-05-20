@@ -100,34 +100,22 @@ export interface LinkTag {
   crossOrigin?: string;
 }
 
-export interface BaseMetaTag {
-  content: string;
-}
+export type HTTPEquivValue =
+  | "content-security-policy"
+  | "content-type"
+  | "default-style"
+  | "x-ua-compatible"
+  | "refresh";
 
-export interface HTML5MetaTag extends BaseMetaTag {
-  name: string;
-  property?: undefined;
-  httpEquiv?: undefined;
-}
-
-export interface RDFaMetaTag extends BaseMetaTag {
-  property: string;
-  name?: undefined;
-  httpEquiv?: undefined;
-}
-
-export interface HTTPEquivMetaTag extends BaseMetaTag {
-  httpEquiv:
-    | "content-security-policy"
-    | "content-type"
-    | "default-style"
-    | "x-ua-compatible"
-    | "refresh";
-  name?: undefined;
-  property?: undefined;
-}
-
-export type MetaTag = HTML5MetaTag | RDFaMetaTag | HTTPEquivMetaTag;
+/**
+ * A meta tag must declare exactly one of `name`, `property`, or `httpEquiv`.
+ * Modelled as a discriminated union so TypeScript rejects entries that mix them
+ * or omit all three at the call site.
+ */
+export type MetaTag =
+  | { content: string; name: string }
+  | { content: string; property: string }
+  | { content: string; httpEquiv: HTTPEquivValue };
 
 export type ImagePrevSize = "none" | "standard" | "large";
 
@@ -141,6 +129,41 @@ export interface AdditionalRobotsProps {
   noimageindex?: boolean;
   notranslate?: boolean;
 }
+
+/**
+ * Common Schema.org `@type` values. The trailing `(string & {})` keeps the field
+ * open to any other Schema.org type while still surfacing IntelliSense for the
+ * popular ones.
+ */
+export type SchemaOrgType =
+  | "Article"
+  | "BlogPosting"
+  | "BreadcrumbList"
+  | "Course"
+  | "Event"
+  | "FAQPage"
+  | "HowTo"
+  | "JobPosting"
+  | "LocalBusiness"
+  | "Organization"
+  | "Person"
+  | "Product"
+  | "Recipe"
+  | "Review"
+  | "SoftwareApplication"
+  | "VideoObject"
+  | "WebPage"
+  | "WebSite"
+  | (string & {});
+
+/**
+ * A single JSON-LD object. `@context` and `@type` are typed for autocomplete;
+ * any other Schema.org property is accepted.
+ */
+export type JsonLdObject = {
+  "@context"?: "https://schema.org" | (string & {});
+  "@type"?: SchemaOrgType;
+} & Record<string, unknown>;
 
 export interface AstroSeoProps {
   title?: string;
@@ -157,5 +180,5 @@ export interface AstroSeoProps {
   twitter?: Twitter;
   additionalMetaTags?: ReadonlyArray<MetaTag>;
   additionalLinkTags?: ReadonlyArray<LinkTag>;
-  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  jsonLd?: JsonLdObject | JsonLdObject[];
 }

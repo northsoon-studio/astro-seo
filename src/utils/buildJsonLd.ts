@@ -11,14 +11,12 @@
  * Arrays are supported: pass multiple Schema.org objects in one prop.
  */
 
-export const buildJsonLd = (
-  jsonLd: Record<string, unknown> | Record<string, unknown>[],
-): string => {
-  // Escape <, > and & as Unicode sequences to prevent early </script> injection (XSS).
-  // JSON unicode escapes are valid JSON — parsers handle them transparently.
-  const data = JSON.stringify(jsonLd)
-    .replace(/</g, "\\u003C")
-    .replace(/>/g, "\\u003E")
-    .replace(/&/g, "\\u0026");
+import type { JsonLdObject } from "../types";
+
+export const buildJsonLd = (jsonLd: JsonLdObject | JsonLdObject[]): string => {
+  // Single regex pass — same XSS guarantee as three sequential replaces, half the allocations.
+  const data = JSON.stringify(jsonLd).replace(/[<>&]/g, (c) =>
+    c === "<" ? "\\u003C" : c === ">" ? "\\u003E" : "\\u0026",
+  );
   return `<script type="application/ld+json">${data}</script>`;
 };
