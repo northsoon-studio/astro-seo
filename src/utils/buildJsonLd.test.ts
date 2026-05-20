@@ -86,6 +86,10 @@ describe("buildJsonLd", () => {
     expect(result).toContain("\\u003C/script\\u003E");
   });
 
+  it("returns an empty string for an empty array (avoids emitting <script>[]</script>)", () => {
+    expect(buildJsonLd([])).toBe("");
+  });
+
   it("serializes an FAQPage correctly", () => {
     const result = buildJsonLd({
       "@context": "https://schema.org",

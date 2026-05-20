@@ -14,6 +14,10 @@
 import type { JsonLdObject } from "../types";
 
 export const buildJsonLd = (jsonLd: JsonLdObject | JsonLdObject[]): string => {
+  // Skip empty arrays — happens naturally with `jsonLd={items.map(...)}` patterns
+  // where `items` is empty. Emitting <script>[]</script> would just pollute <head>.
+  if (Array.isArray(jsonLd) && jsonLd.length === 0) return "";
+
   // Single regex pass — same XSS guarantee as three sequential replaces, half the allocations.
   const data = JSON.stringify(jsonLd).replace(/[<>&]/g, (c) =>
     c === "<" ? "\\u003C" : c === ">" ? "\\u003E" : "\\u0026",
