@@ -1,6 +1,6 @@
 {
   "name": "@northsoon/astro-seo",
-  "version": "2.1.2",
+  "version": "3.0.0",
   "description": "SEO component for Astro with full TypeScript support, auto-generated .d.ts declaration files, and IDE autocompletion",
   "type": "module",
   "main": "./index.ts",
@@ -23,7 +23,7 @@
     }
   },
   "files": [
-    "src/AstroSeo.astro",
+    "src/AstroHead.astro",
     "src/types.ts",
     "src/types-extended.ts",
     "src/utils/buildTags.ts",

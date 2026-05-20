@@ -6,6 +6,17 @@
 import { escape } from "html-escaper";
 import type { AstroSeoProps, OpenGraphMedia } from "../types";
 
+const isAbsoluteUrl = (url: string): boolean =>
+  /^(https?:)?\/\//i.test(url);
+
+const warnRelativeUrl = (field: string, url: string): void => {
+  if (import.meta.env?.DEV && !isAbsoluteUrl(url)) {
+    console.warn(
+      `[@northsoon/astro-seo] ${field} should be an absolute URL for SEO. Got: "${url}"`,
+    );
+  }
+};
+
 const createTag = (
   name: "meta" | "link",
   attributes: Record<string, string>,
@@ -32,6 +43,7 @@ const buildOpenGraphMediaTags = (
   const tags: string[] = [];
 
   media.forEach((medium) => {
+    warnRelativeUrl(`openGraph.${mediaType}s[].url`, medium.url);
     tags.push(createOpenGraphTag(mediaType, medium.url));
 
     if (medium.alt) {
@@ -118,6 +130,7 @@ export const buildTags = (config: AstroSeoProps): string => {
 
   // Canonical
   if (config.canonical) {
+    warnRelativeUrl("canonical", config.canonical);
     addTag(createLinkTag({ rel: "canonical", href: config.canonical }));
   }
 
@@ -158,6 +171,7 @@ export const buildTags = (config: AstroSeoProps): string => {
     }
 
     if (config.openGraph.url) {
+      warnRelativeUrl("openGraph.url", config.openGraph.url);
       addTag(createOpenGraphTag("url", config.openGraph.url));
     }
 
@@ -311,6 +325,7 @@ export const buildTags = (config: AstroSeoProps): string => {
     }
 
     if (config.twitter.image) {
+      warnRelativeUrl("twitter.image", config.twitter.image);
       addTag(createMetaTag({ name: "twitter:image", content: config.twitter.image }));
       if (config.twitter.imageAlt) {
         addTag(createMetaTag({ name: "twitter:image:alt", content: config.twitter.imageAlt }));

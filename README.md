@@ -4,7 +4,7 @@
 
 An enhanced, maintained version of `@astrolib/seo` with properly exported TypeScript types, declaration files (`.d.ts`), and better documentation.
 
-> **v2.1.2** — The component is exported as `AstroHead`. If you were using `AstroSeo` from a previous version, see the [migration guide](#-migration-from-v1) below.
+> **v3.0.0** — Major release: typed JSON-LD, full Twitter Cards support, stricter `MetaTag` discriminated union, fix for `titleTemplate` with `$` sequences, and dev-mode URL warnings. See [Migration from v2](#-migration-from-v2) and the [changelog](#-changelog) for details.
 
 ## ✨ Features
 
@@ -377,10 +377,70 @@ This installs `@astrojs/check` and `typescript` if missing.
 # Check installed version
 npm list @northsoon/astro-seo
 
-# Should show @northsoon/astro-seo@2.1.2 or higher
+# Should show @northsoon/astro-seo@3.0.0 or higher
 ```
 
+## 🔁 Migration from v2
+
+v3.0.0 is mostly additive, but a few changes can surface type errors in code that compiled under v2:
+
+- **`MetaTag` is now a true discriminated union.** Entries in `additionalMetaTags` must declare exactly one of `name`, `property`, or `httpEquiv`. Entries missing all three were silently emitted as invalid `<meta content="…">` in v2 — in v3 they are skipped (with a dev warning) and TypeScript will flag them at build time.
+- **`jsonLd` is now typed as `JsonLdObject` instead of `Record<string, unknown>`.** Existing usage keeps working — `JsonLdObject` is `{ "@context"?, "@type"? } & Record<string, unknown>` — but you now get IDE autocomplete for `@context` and common Schema.org `@type` values.
+- **Internal file renamed**: `src/AstroSeo.astro` → `src/AstroHead.astro`. Public API unchanged (still `import { AstroHead }`). Only affects code doing deep imports.
+
+No runtime behavior changed for code that was already correctly typed.
+
+## 🆕 What's New in v3
+
+### Twitter Cards: full support
+
+```astro
+<AstroHead
+  twitter={{
+    cardType: "summary_large_image",
+    site: "@mysite",
+    handle: "@author",
+    title: "Tweet-specific title",          // optional, falls back to og:title
+    description: "Tweet-specific summary",  // optional, falls back to og:description
+    image: "https://mysite.com/twitter.png",
+    imageAlt: "Alt text for accessibility",
+  }}
+/>
+```
+
+Only the fields you set are emitted — Twitter natively falls back to `og:*` for anything you omit, so there's no duplication.
+
+### JSON-LD with autocomplete
+
+```ts
+import type { JsonLdObject } from "@northsoon/astro-seo";
+
+const orgSchema: JsonLdObject = {
+  "@context": "https://schema.org",  // autocompletes
+  "@type": "Organization",            // autocompletes common types
+  name: "Northsoon Studio",
+  url: "https://northsoon.com",
+};
+```
+
+### Dev-mode URL warnings
+
+`canonical`, `openGraph.url`, `openGraph.images[].url`, `openGraph.videos[].url`, and `twitter.image` now log a `console.warn` in dev when given relative URLs (Google requires absolute for `canonical`, social crawlers for the rest). Silent in production.
+
 ## 📋 Changelog
+
+### v3.0.0
+
+- **Feat:** Full Twitter Cards support — `twitter.title`, `twitter.description`, `twitter.image`, `twitter.imageAlt`
+- **Feat:** `JsonLdObject` type — `@context` and `@type` autocomplete for the `jsonLd` prop, with `SchemaOrgType` helper
+- **Feat:** Dev-mode `console.warn` when `canonical`, `openGraph.url`, OG media URLs, or `twitter.image` are relative
+- **Fix:** `titleTemplate` no longer interprets `$&`, `$1`, `$$` in `title` as replacement patterns (uses `split`/`join` instead of `replaceAll`)
+- **Fix:** `additionalMetaTags` entries without `name`/`property`/`httpEquiv` are skipped (and warn in dev) instead of emitting invalid `<meta>`
+- **Refactor:** Unified `createMetaTag` / `createLinkTag` through a single `createTag` helper
+- **Refactor:** `MetaTag` is now a true discriminated union — TypeScript rejects entries that mix or omit discriminators
+- **Refactor:** `buildJsonLd` uses a single-pass regex for the XSS escape (same guarantee, fewer allocations)
+- **Chore:** Renamed `src/AstroSeo.astro` → `src/AstroHead.astro` to match the exported name
+- **Test:** added 9 new tests — `$&` regression, http-equiv tags, invalid `additionalMetaTags`, Twitter title/description/image/imageAlt, no-duplication fallback
 
 ### v2.1.2
 
