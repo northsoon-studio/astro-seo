@@ -136,6 +136,7 @@ export const buildTags = (config: AstroSeoProps): string => {
 
   // Mobile Alternate
   if (config.mobileAlternate) {
+    warnRelativeUrl("mobileAlternate.href", config.mobileAlternate.href);
     addTag(
       createLinkTag({
         rel: "alternate",
