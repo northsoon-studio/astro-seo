@@ -9,19 +9,60 @@ An enhanced, maintained version of `@astrolib/seo` with properly exported TypeSc
 ## ✨ Features
 
 - ✅ **Full TypeScript support** with auto-generated `.d.ts` declaration files
-- ✅ **IDE autocompletion** for all props (works out of the box!)
-- ✅ **Type validation** - TypeScript catches errors before runtime
+- ✅ **IDE autocompletion** for all props, including `@context` / `@type` for JSON-LD
+- ✅ **Type validation** — `MetaTag` is a true discriminated union, errors caught before runtime
 - ✅ Open Graph support (Facebook, LinkedIn, etc.)
-- ✅ Twitter Cards support
+- ✅ **Twitter Cards** — `cardType`, `site`, `handle`, `title`, `description`, `image`, `imageAlt`
 - ✅ Customizable robots meta tags
-- ✅ Canonical URLs
+- ✅ Canonical URLs (with dev-mode warning when relative)
 - ✅ Language alternates (hreflang)
 - ✅ Custom additional meta tags
 - ✅ Custom additional link tags
 - ✅ Compatible with Astro 4.x, 5.x, and 6.x
 - ✅ Compatible with TypeScript 5.x and 6.x
-- ✅ Unit tested with Vitest
-- ✅ **JSON-LD support** — pass any Schema.org object as a prop, rendered as `<script type="application/ld+json">`
+- ✅ Unit tested with Vitest (53 tests)
+- ✅ **JSON-LD support** — pass any Schema.org object as a prop, rendered as XSS-safe `<script type="application/ld+json">`
+
+## 🆕 What's New in v3
+
+### Twitter Cards: full support
+
+```astro
+<AstroHead
+  twitter={{
+    cardType: "summary_large_image",
+    site: "@mysite",
+    handle: "@author",
+    title: "Tweet-specific title",          // optional, falls back to og:title
+    description: "Tweet-specific summary",  // optional, falls back to og:description
+    image: "https://mysite.com/twitter.png",
+    imageAlt: "Alt text for accessibility",
+  }}
+/>
+```
+
+Only the fields you set are emitted — Twitter natively falls back to `og:*` for anything you omit, so there's no duplication.
+
+### JSON-LD with autocomplete
+
+```ts
+import type { JsonLdObject } from "@northsoon/astro-seo";
+
+const orgSchema: JsonLdObject = {
+  "@context": "https://schema.org",  // autocompletes
+  "@type": "Organization",            // autocompletes common Schema.org types
+  name: "Northsoon Studio",
+  url: "https://northsoon.com",
+};
+```
+
+### Dev-mode URL warnings
+
+`canonical`, `openGraph.url`, `openGraph.images[].url`, `openGraph.videos[].url`, and `twitter.image` log a `console.warn` in dev when given relative URLs (Google requires absolute canonicals; social crawlers can't resolve relative either). Silent in production.
+
+### Stricter `MetaTag` typing
+
+`additionalMetaTags[]` entries must now declare exactly one of `name`, `property`, or `httpEquiv` — TypeScript rejects entries that mix or omit them, and runtime skips invalid entries (with a dev warning) instead of emitting bad HTML.
 
 ## 🔧 How TypeScript Types Work
 
@@ -110,9 +151,14 @@ import { AstroHead } from "@northsoon/astro-seo";
       ],
     }}
     twitter={{
-      handle: "@myhandle",
-      site: "@mysite",
       cardType: "summary_large_image",
+      site: "@mysite",
+      handle: "@myhandle",
+      // Optional — only emit when you want different values than og:*
+      title: "Tweet-specific title",
+      description: "Tweet-specific summary (Twitter falls back to og:description otherwise)",
+      image: "https://mysite.com/twitter-card.jpg",
+      imageAlt: "Preview image alt text",
     }}
     languageAlternates={[
       { hreflang: "en", href: "https://mysite.com/en/page" },
@@ -150,6 +196,7 @@ import { AstroHead } from "@northsoon/astro-seo";
 | `languageAlternates` | `LanguageAlternate[]`   | Language alternate versions                         |
 | `additionalMetaTags` | `MetaTag[]`             | Additional meta tags                                |
 | `additionalLinkTags` | `LinkTag[]`             | Additional link tags                                |
+| `jsonLd`             | `JsonLdObject \| JsonLdObject[]` | Schema.org structured data (single object or array) |
 
 ## 🤖 Robots Configuration
 
@@ -206,7 +253,7 @@ import { AstroHead } from "@northsoon/astro-seo";
 />
 ```
 
-## � JSON-LD (Structured Data)
+## 📊 JSON-LD (Structured Data)
 
 Pass any [Schema.org](https://schema.org) object to generate a `<script type="application/ld+json">` tag. This enables Google Rich Results (star ratings, breadcrumbs, FAQ dropdowns, etc.).
 
@@ -253,7 +300,7 @@ For multiple schemas on the same page, pass an array:
 
 Validate your structured data at [Google Rich Results Test](https://search.google.com/test/rich-results).
 
-## �📝 TypeScript Types
+## 📝 TypeScript Types
 
 All types are exported and **work automatically** - no additional setup needed!
 
@@ -267,10 +314,14 @@ import type {
   OpenGraphMedia,
   Twitter,
   MetaTag,
+  HTTPEquivValue,
   LinkTag,
   LanguageAlternate,
   AdditionalRobotsProps,
-  // Schema.org helper types (for JSON-LD)
+  // JSON-LD types (v3)
+  JsonLdObject,
+  SchemaOrgType,
+  // Schema.org helper types (for JSON-LD shapes)
   ContactPoint,
   OpeningHoursSpecification,
   Offer,
@@ -307,6 +358,16 @@ Run `astro check` in your project to verify:
 npx astro check
 # Should show: 0 errors ✓
 ```
+
+## 🔁 Migration from v2
+
+v3.0.0 is mostly additive, but a few changes can surface type errors in code that compiled under v2:
+
+- **`MetaTag` is now a true discriminated union.** Entries in `additionalMetaTags` must declare exactly one of `name`, `property`, or `httpEquiv`. Entries missing all three were silently emitted as invalid `<meta content="…">` in v2 — in v3 they are skipped (with a dev warning) and TypeScript will flag them at build time.
+- **`jsonLd` is now typed as `JsonLdObject` instead of `Record<string, unknown>`.** Existing usage keeps working — `JsonLdObject` is `{ "@context"?, "@type"? } & Record<string, unknown>` — but you now get IDE autocomplete for `@context` and common Schema.org `@type` values.
+- **Internal file renamed**: `src/AstroSeo.astro` → `src/AstroHead.astro`. Public API unchanged (still `import { AstroHead }`). Only affects code doing deep imports.
+
+No runtime behavior changed for code that was already correctly typed.
 
 ## 🔄 Migration from v1
 
@@ -354,7 +415,7 @@ If you are coming from `@astrolib/seo`:
 
 Props are 100% compatible!
 
-## � Troubleshooting
+## 🛠 Troubleshooting
 
 ### TypeScript can't find types
 
@@ -369,7 +430,7 @@ This installs `@astrojs/check` and `typescript` if missing.
 ### IDE not showing autocompletion
 
 1. Restart your TypeScript server (VS Code: `Ctrl+Shift+P` → "TypeScript: Restart TS Server")
-2. Make sure you're on version `2.0.0` or higher
+2. Make sure you're on version `3.0.0` or higher
 
 ### Verify installation
 
@@ -379,53 +440,6 @@ npm list @northsoon/astro-seo
 
 # Should show @northsoon/astro-seo@3.0.0 or higher
 ```
-
-## 🔁 Migration from v2
-
-v3.0.0 is mostly additive, but a few changes can surface type errors in code that compiled under v2:
-
-- **`MetaTag` is now a true discriminated union.** Entries in `additionalMetaTags` must declare exactly one of `name`, `property`, or `httpEquiv`. Entries missing all three were silently emitted as invalid `<meta content="…">` in v2 — in v3 they are skipped (with a dev warning) and TypeScript will flag them at build time.
-- **`jsonLd` is now typed as `JsonLdObject` instead of `Record<string, unknown>`.** Existing usage keeps working — `JsonLdObject` is `{ "@context"?, "@type"? } & Record<string, unknown>` — but you now get IDE autocomplete for `@context` and common Schema.org `@type` values.
-- **Internal file renamed**: `src/AstroSeo.astro` → `src/AstroHead.astro`. Public API unchanged (still `import { AstroHead }`). Only affects code doing deep imports.
-
-No runtime behavior changed for code that was already correctly typed.
-
-## 🆕 What's New in v3
-
-### Twitter Cards: full support
-
-```astro
-<AstroHead
-  twitter={{
-    cardType: "summary_large_image",
-    site: "@mysite",
-    handle: "@author",
-    title: "Tweet-specific title",          // optional, falls back to og:title
-    description: "Tweet-specific summary",  // optional, falls back to og:description
-    image: "https://mysite.com/twitter.png",
-    imageAlt: "Alt text for accessibility",
-  }}
-/>
-```
-
-Only the fields you set are emitted — Twitter natively falls back to `og:*` for anything you omit, so there's no duplication.
-
-### JSON-LD with autocomplete
-
-```ts
-import type { JsonLdObject } from "@northsoon/astro-seo";
-
-const orgSchema: JsonLdObject = {
-  "@context": "https://schema.org",  // autocompletes
-  "@type": "Organization",            // autocompletes common types
-  name: "Northsoon Studio",
-  url: "https://northsoon.com",
-};
-```
-
-### Dev-mode URL warnings
-
-`canonical`, `openGraph.url`, `openGraph.images[].url`, `openGraph.videos[].url`, and `twitter.image` now log a `console.warn` in dev when given relative URLs (Google requires absolute for `canonical`, social crawlers for the rest). Silent in production.
 
 ## 📋 Changelog
 
@@ -484,7 +498,7 @@ const orgSchema: JsonLdObject = {
 - **Breaking:** Removed unused JSON-LD types (`Person`, `Answer`, `Question`, etc.)
 - Fix: `maxVideoPreview` now correctly generates `max-video-preview:N` in the robots tag
 
-## �📄 License
+## 📄 License
 
 MIT © [Manuel Caballero](https://github.com/VVV-WIT-07-DEV)
 
