@@ -4,7 +4,7 @@
 
 An enhanced, maintained version of `@astrolib/seo` with properly exported TypeScript types, declaration files (`.d.ts`), and better documentation.
 
-> **v3.0.0** - Major release: typed JSON-LD, full Twitter Cards support, stricter `MetaTag` discriminated union, fix for `titleTemplate` with `$` sequences, and dev-mode URL warnings. See [Migration from v2](#-migration-from-v2) and the [changelog](#-changelog) for details.
+> **v3.2.0** - Astro integration (`astroSeo()` + `npx astro add`), automatic absolute URLs via `site`/`Astro.site`, URL safety hardening, and Astro 7 support. See [Migration from v3.0](#-migration-from-v30) and the [changelog](#-changelog) for details.
 
 ## ✨ Features
 
@@ -459,7 +459,7 @@ This installs `@astrojs/check` and `typescript` if missing.
 ### IDE not showing autocompletion
 
 1. Restart your TypeScript server (VS Code: `Ctrl+Shift+P` → "TypeScript: Restart TS Server")
-2. Make sure you're on version `3.0.0` or higher
+2. Make sure you're on version `3.2.0` or higher
 
 ### Verify installation
 
@@ -467,23 +467,31 @@ This installs `@astrojs/check` and `typescript` if missing.
 # Check installed version
 npm list @northsoon/astro-seo
 
-# Should show @northsoon/astro-seo@3.0.0 or higher
+# Should show @northsoon/astro-seo@3.2.0 or higher
 ```
 
 ## 📋 Changelog
 
 ### v3.2.0
 
-- **Feat:** Astro 7 support - `peerDependencies` now `"^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"`, dev against Astro 7.3.x, verified end-to-end (config load, absolute URLs, build output identical to Astro 6)
-- No API or behavior changes
+**Highlights:** real Astro integration, automatic absolute URLs, URL safety hardening, and Astro 7 support.
 
-### v3.1.0
+**Added**
+- Astro integration `astroSeo({ site })` as the default export (`npx astro add` ready): validates `site`, sets it in the Astro config when missing, and warns on mismatch or invalid values
+- `site` prop on `<AstroHead />` with `Astro.site` fallback: relative `canonical`, `openGraph.url`, Open Graph media URLs, `twitter.image`, and alternate hrefs are now resolved to absolute URLs when a site is known
+- `./integration` subpath for explicit integration imports; Node contexts (`astro.config.mjs`) resolve to dependency-free compiled JS while Astro pages keep the full component entry via export conditions
+- Full integration setup guide in this README
 
-- **Feat:** real Astro integration - `export default astroSeo({ site })`, enables `npx astro add`, sets `site` in Astro config when missing, warns on mismatch or invalid `site`
-- **Feat:** `site` prop + `Astro.site` fallback - relative `canonical`, `openGraph.url`, OG media URLs, `twitter.image`, and alternate hrefs resolve to absolute URLs when a site is known
-- **Security fix:** URL props with `javascript:`, `data:`, or `vbscript:` schemes (including leading-whitespace/case variants) are skipped with a dev warning instead of emitted into `<link>`/`<meta>` tags
-- **Docs:** integration setup, branding unified under Northsoon Studio
-- **Test:** 9 new tests - dangerous schemes, `site` resolution, absolute passthrough
+**Security**
+- URL props using `javascript:`, `data:`, or `vbscript:` schemes (including case and leading-whitespace variants) are now skipped with a dev-mode warning instead of being emitted into `<link>` / `<meta>` tags
+
+**Changed**
+- Compatibility extended to Astro 4.x, 5.x, 6.x, and 7.x (`peerDependencies` updated, developed and verified end-to-end against Astro 7.3.x with build output identical to Astro 6)
+- Default export is now the integration; use the named `AstroHead` import for the component (see Migration from v3.0)
+- Branding unified under Northsoon Studio
+
+**Tests**
+- 9 new tests (54 total): dangerous URL schemes, `site` resolution, absolute-URL passthrough
 
 ### v3.0.0
 
