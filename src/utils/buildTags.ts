@@ -9,6 +9,28 @@ import type { AstroSeoProps, OpenGraphMedia } from "../types";
 const isAbsoluteUrl = (url: string): boolean =>
   /^(https?:)?\/\//i.test(url);
 
+/**
+ * Rejects URLs with dangerous schemes (`javascript:`, `data:`, `vbscript:`)
+ * that could turn a `<link href>` into an XSS/phishing vector.
+ * Matching is case-insensitive and tolerates leading whitespace, since
+ * browsers do too (`"  javascript:..."` still executes).
+ */
+export const isSafeUrl = (url: string): boolean =>
+  !/^\s*(javascript|data|vbscript)\s*:/i.test(url);
+
+/**
+ * Resolves a possibly-relative URL against `site` (e.g. "https://mysite.com").
+ * Absolute URLs and missing `site` pass through unchanged.
+ */
+export const resolveUrl = (url: string, site?: string): string => {
+  if (!site || isAbsoluteUrl(url)) return url;
+  try {
+    return new URL(url, site.endsWith("/") ? site : `${site}/`).href;
+  } catch {
+    return url;
+  }
+};
+
 const warnRelativeUrl = (field: string, url: string): void => {
   if (import.meta.env?.DEV && !isAbsoluteUrl(url)) {
     console.warn(
@@ -38,20 +60,28 @@ const createOpenGraphTag = (property: string, content: string): string =>
 
 const buildOpenGraphMediaTags = (
   mediaType: "image" | "video",
-  media: ReadonlyArray<OpenGraphMedia>
+  media: ReadonlyArray<OpenGraphMedia>,
+  prepareUrl: (field: string, url: string) => string | undefined,
 ): string => {
   const tags: string[] = [];
 
   media.forEach((medium) => {
-    warnRelativeUrl(`openGraph.${mediaType}s[].url`, medium.url);
-    tags.push(createOpenGraphTag(mediaType, medium.url));
+    const url = prepareUrl(`openGraph.${mediaType}s[].url`, medium.url);
+    if (!url) return;
+    tags.push(createOpenGraphTag(mediaType, url));
 
     if (medium.alt) {
       tags.push(createOpenGraphTag(`${mediaType}:alt`, medium.alt));
     }
 
     if (medium.secureUrl) {
-      tags.push(createOpenGraphTag(`${mediaType}:secure_url`, medium.secureUrl));
+      const secureUrl = prepareUrl(
+        `openGraph.${mediaType}s[].secureUrl`,
+        medium.secureUrl,
+      );
+      if (secureUrl) {
+        tags.push(createOpenGraphTag(`${mediaType}:secure_url`, secureUrl));
+      }
     }
 
     if (medium.type) {
@@ -75,6 +105,26 @@ export const buildTags = (config: AstroSeoProps): string => {
     tags.push(tag);
   };
 
+  const site = config.site;
+
+  /**
+   * Validates + resolves a URL prop. Returns `undefined` when the tag must be
+   * skipped (dangerous scheme such as `javascript:`). Relative URLs are
+   * resolved against `site` when available, otherwise kept + warned in dev.
+   */
+  const prepareUrl = (field: string, url: string): string | undefined => {
+    if (!isSafeUrl(url)) {
+      if (import.meta.env?.DEV) {
+        console.warn(
+          `[@northsoon/astro-seo] ${field} skipped: dangerous URL scheme. Got: "${url}"`,
+        );
+      }
+      return undefined;
+    }
+    if (!site) warnRelativeUrl(field, url);
+    return resolveUrl(url, site);
+  };
+
   // Title
   if (config.title) {
     // split/join instead of replaceAll: replaceAll's replacement string interprets
@@ -93,7 +143,7 @@ export const buildTags = (config: AstroSeoProps): string => {
   // Robots: noindex, nofollow, and other robotsProps
   const robotsContent: string[] = [];
   // typeof check (not simple if) to detect explicit false:
-  // noindex: false means "do index" — different from prop being absent
+  // noindex: false means "do index" - different from prop being absent
   if (typeof config.noindex !== "undefined") {
     robotsContent.push(config.noindex ? "noindex" : "index");
   }
@@ -130,32 +180,43 @@ export const buildTags = (config: AstroSeoProps): string => {
 
   // Canonical
   if (config.canonical) {
-    warnRelativeUrl("canonical", config.canonical);
-    addTag(createLinkTag({ rel: "canonical", href: config.canonical }));
+    const href = prepareUrl("canonical", config.canonical);
+    if (href) addTag(createLinkTag({ rel: "canonical", href }));
   }
 
   // Mobile Alternate
   if (config.mobileAlternate) {
-    warnRelativeUrl("mobileAlternate.href", config.mobileAlternate.href);
-    addTag(
-      createLinkTag({
-        rel: "alternate",
-        media: config.mobileAlternate.media,
-        href: config.mobileAlternate.href,
-      })
+    const href = prepareUrl(
+      "mobileAlternate.href",
+      config.mobileAlternate.href,
     );
+    if (href) {
+      addTag(
+        createLinkTag({
+          rel: "alternate",
+          media: config.mobileAlternate.media,
+          href,
+        }),
+      );
+    }
   }
 
   // Language Alternates
   if (config.languageAlternates?.length) {
     config.languageAlternates.forEach((languageAlternate) => {
-      addTag(
-        createLinkTag({
-          rel: "alternate",
-          hreflang: languageAlternate.hreflang,
-          href: languageAlternate.href,
-        })
+      const href = prepareUrl(
+        `languageAlternates[${languageAlternate.hreflang}].href`,
+        languageAlternate.href,
       );
+      if (href) {
+        addTag(
+          createLinkTag({
+            rel: "alternate",
+            hreflang: languageAlternate.hreflang,
+            href,
+          }),
+        );
+      }
     });
   }
 
@@ -172,8 +233,8 @@ export const buildTags = (config: AstroSeoProps): string => {
     }
 
     if (config.openGraph.url) {
-      warnRelativeUrl("openGraph.url", config.openGraph.url);
-      addTag(createOpenGraphTag("url", config.openGraph.url));
+      const url = prepareUrl("openGraph.url", config.openGraph.url);
+      if (url) addTag(createOpenGraphTag("url", url));
     }
 
     if (config.openGraph.type) {
@@ -181,11 +242,11 @@ export const buildTags = (config: AstroSeoProps): string => {
     }
 
     if (config.openGraph.images?.length) {
-      addTag(buildOpenGraphMediaTags("image", config.openGraph.images));
+      addTag(buildOpenGraphMediaTags("image", config.openGraph.images, prepareUrl));
     }
 
     if (config.openGraph.videos?.length) {
-      addTag(buildOpenGraphMediaTags("video", config.openGraph.videos));
+      addTag(buildOpenGraphMediaTags("video", config.openGraph.videos, prepareUrl));
     }
 
     if (config.openGraph.locale) {
@@ -326,10 +387,12 @@ export const buildTags = (config: AstroSeoProps): string => {
     }
 
     if (config.twitter.image) {
-      warnRelativeUrl("twitter.image", config.twitter.image);
-      addTag(createMetaTag({ name: "twitter:image", content: config.twitter.image }));
-      if (config.twitter.imageAlt) {
-        addTag(createMetaTag({ name: "twitter:image:alt", content: config.twitter.imageAlt }));
+      const image = prepareUrl("twitter.image", config.twitter.image);
+      if (image) {
+        addTag(createMetaTag({ name: "twitter:image", content: image }));
+        if (config.twitter.imageAlt) {
+          addTag(createMetaTag({ name: "twitter:image:alt", content: config.twitter.imageAlt }));
+        }
       }
     }
   }
@@ -366,9 +429,11 @@ export const buildTags = (config: AstroSeoProps): string => {
   // Additional Link Tags
   if (config.additionalLinkTags?.length) {
     config.additionalLinkTags.forEach((linkTag) => {
+      const href = prepareUrl("additionalLinkTags[].href", linkTag.href);
+      if (!href) return;
       const attributes: Record<string, string> = {
         rel: linkTag.rel,
-        href: linkTag.href,
+        href,
       };
 
       if (linkTag.sizes) attributes.sizes = linkTag.sizes;

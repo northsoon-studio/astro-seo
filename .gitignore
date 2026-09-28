@@ -3,6 +3,7 @@ node_modules/
 
 # Archivos de build
 dist/
+integration.js
 .astro/
 
 # Cache

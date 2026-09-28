@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { buildTags } from "./buildTags";
 
-describe("buildTags — title", () => {
+describe("buildTags - title", () => {
   it("generates the <title> tag", () => {
     const result = buildTags({ title: "My page" });
     expect(result).toContain("<title>My page</title>");
@@ -22,10 +22,10 @@ describe("buildTags — title", () => {
 
   it("titleTemplate preserves $ sequences in title (regression: replaceAll interprets $& as the match)", () => {
     const result = buildTags({
-      title: "Save $& 50% — only $5",
+      title: "Save $& 50% - only $5",
       titleTemplate: "%s | Site",
     });
-    expect(result).toContain("<title>Save $&amp; 50% — only $5 | Site</title>");
+    expect(result).toContain("<title>Save $&amp; 50% - only $5 | Site</title>");
     expect(result).not.toContain("%s");
   });
 
@@ -44,7 +44,7 @@ describe("buildTags — title", () => {
   });
 });
 
-describe("buildTags — description", () => {
+describe("buildTags - description", () => {
   it("generates meta description", () => {
     const result = buildTags({ description: "Test description" });
     expect(result).toContain('name="description"');
@@ -58,13 +58,13 @@ describe("buildTags — description", () => {
   });
 });
 
-describe("buildTags — robots", () => {
+describe("buildTags - robots", () => {
   it("noindex:true generates 'noindex'", () => {
     const result = buildTags({ noindex: true });
     expect(result).toContain("noindex");
   });
 
-  it("noindex:false generates 'index' — explicit false is not the same as omitting the prop", () => {
+  it("noindex:false generates 'index' - explicit false is not the same as omitting the prop", () => {
     const result = buildTags({ noindex: false });
     expect(result).toContain('"index"');
     expect(result).not.toContain("noindex");
@@ -96,7 +96,7 @@ describe("buildTags — robots", () => {
   });
 });
 
-describe("buildTags — canonical", () => {
+describe("buildTags - canonical", () => {
   it("generates canonical link tag", () => {
     const result = buildTags({ canonical: "https://northsoon.com/page" });
     expect(result).toContain('rel="canonical"');
@@ -104,7 +104,7 @@ describe("buildTags — canonical", () => {
   });
 });
 
-describe("buildTags — Open Graph", () => {
+describe("buildTags - Open Graph", () => {
   it("uses title as og:title fallback when openGraph.title is not provided", () => {
     const result = buildTags({
       title: "My page",
@@ -156,7 +156,7 @@ describe("buildTags — Open Graph", () => {
   });
 });
 
-describe("buildTags — Twitter", () => {
+describe("buildTags - Twitter", () => {
   it("generates twitter:card", () => {
     const result = buildTags({ twitter: { cardType: "summary_large_image" } });
     expect(result).toContain('name="twitter:card"');
@@ -199,7 +199,7 @@ describe("buildTags — Twitter", () => {
     expect(result).not.toContain('name="twitter:image:alt"');
   });
 
-  it("does not auto-duplicate og:* into twitter:* — Twitter falls back natively", () => {
+  it("does not auto-duplicate og:* into twitter:* - Twitter falls back natively", () => {
     const result = buildTags({
       title: "Page",
       description: "Desc",
@@ -212,7 +212,7 @@ describe("buildTags — Twitter", () => {
   });
 });
 
-describe("buildTags — languageAlternates", () => {
+describe("buildTags - languageAlternates", () => {
   it("generates hreflang alternate links", () => {
     const result = buildTags({
       languageAlternates: [
@@ -226,7 +226,7 @@ describe("buildTags — languageAlternates", () => {
   });
 });
 
-describe("buildTags — additionalMetaTags", () => {
+describe("buildTags - additionalMetaTags", () => {
   beforeEach(() => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
   });
@@ -273,7 +273,7 @@ describe("buildTags — additionalMetaTags", () => {
   });
 });
 
-describe("buildTags — additionalLinkTags", () => {
+describe("buildTags - additionalLinkTags", () => {
   it("generates link tag with rel and href", () => {
     const result = buildTags({
       additionalLinkTags: [{ rel: "icon", href: "/favicon.ico" }],
@@ -300,7 +300,7 @@ describe("buildTags — additionalLinkTags", () => {
   });
 });
 
-describe("buildTags — facebook", () => {
+describe("buildTags - facebook", () => {
   it("generates fb:app_id meta tag", () => {
     const result = buildTags({ facebook: { appId: "123456789" } });
     expect(result).toContain('property="fb:app_id"');
@@ -308,7 +308,7 @@ describe("buildTags — facebook", () => {
   });
 });
 
-describe("buildTags — mobileAlternate", () => {
+describe("buildTags - mobileAlternate", () => {
   it("generates alternate link for mobile with media query", () => {
     const result = buildTags({
       mobileAlternate: {
@@ -319,5 +319,82 @@ describe("buildTags — mobileAlternate", () => {
     expect(result).toContain('rel="alternate"');
     expect(result).toContain('media="only screen and (max-width: 640px)"');
     expect(result).toContain('href="https://m.northsoon.com/page"');
+  });
+});
+
+describe("buildTags - URL safety (XSS/phishing)", () => {
+  it("skips canonical with javascript: scheme", () => {
+    const result = buildTags({ canonical: "javascript:alert(1)" });
+    expect(result).not.toContain("rel=\"canonical\"");
+    expect(result).not.toContain("javascript:");
+  });
+
+  it("skips canonical with leading-whitespace javascript: scheme", () => {
+    const result = buildTags({ canonical: "   JaVaScRiPt:alert(1)" });
+    expect(result).not.toContain("rel=\"canonical\"");
+  });
+
+  it("skips additionalLinkTags with data: scheme", () => {
+    const result = buildTags({
+      additionalLinkTags: [{ rel: "icon", href: "data:text/html,<h1>x</h1>" }],
+    });
+    expect(result).not.toContain('rel="icon"');
+  });
+
+  it("skips twitter:image with vbscript: scheme (and its alt tag)", () => {
+    const result = buildTags({
+      twitter: {
+        cardType: "summary",
+        image: "vbscript:msgbox(1)",
+        imageAlt: "alt",
+      },
+    });
+    expect(result).not.toContain("twitter:image");
+  });
+
+  it("skips unsafe openGraph image but keeps the safe one", () => {
+    const result = buildTags({
+      openGraph: {
+        images: [
+          { url: "javascript:alert(1)" },
+          { url: "https://northsoon.com/og.jpg" },
+        ],
+      },
+    });
+    expect(result).not.toContain("javascript:");
+    expect(result).toContain('content="https://northsoon.com/og.jpg"');
+  });
+});
+
+describe("buildTags - site resolution", () => {
+  it("resolves relative canonical against site", () => {
+    const result = buildTags({
+      site: "https://northsoon.com",
+      canonical: "/page",
+    });
+    expect(result).toContain('href="https://northsoon.com/page"');
+  });
+
+  it("resolves relative og:url and twitter:image against site", () => {
+    const result = buildTags({
+      site: "https://northsoon.com",
+      openGraph: { url: "/page" },
+      twitter: { cardType: "summary", image: "/card.png" },
+    });
+    expect(result).toContain('content="https://northsoon.com/page"');
+    expect(result).toContain('content="https://northsoon.com/card.png"');
+  });
+
+  it("leaves absolute URLs untouched when site is set", () => {
+    const result = buildTags({
+      site: "https://northsoon.com",
+      canonical: "https://other.com/page",
+    });
+    expect(result).toContain('href="https://other.com/page"');
+  });
+
+  it("keeps relative URLs as-is when no site is provided", () => {
+    const result = buildTags({ canonical: "/page" });
+    expect(result).toContain('href="/page"');
   });
 });

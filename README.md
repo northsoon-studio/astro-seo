@@ -4,24 +4,25 @@
 
 An enhanced, maintained version of `@astrolib/seo` with properly exported TypeScript types, declaration files (`.d.ts`), and better documentation.
 
-> **v3.0.0** — Major release: typed JSON-LD, full Twitter Cards support, stricter `MetaTag` discriminated union, fix for `titleTemplate` with `$` sequences, and dev-mode URL warnings. See [Migration from v2](#-migration-from-v2) and the [changelog](#-changelog) for details.
+> **v3.0.0** - Major release: typed JSON-LD, full Twitter Cards support, stricter `MetaTag` discriminated union, fix for `titleTemplate` with `$` sequences, and dev-mode URL warnings. See [Migration from v2](#-migration-from-v2) and the [changelog](#-changelog) for details.
 
 ## ✨ Features
 
 - ✅ **Full TypeScript support** with auto-generated `.d.ts` declaration files
 - ✅ **IDE autocompletion** for all props, including `@context` / `@type` for JSON-LD
-- ✅ **Type validation** — `MetaTag` is a true discriminated union, errors caught before runtime
+- ✅ **Type validation** - `MetaTag` is a true discriminated union, errors caught before runtime
 - ✅ Open Graph support (Facebook, LinkedIn, etc.)
-- ✅ **Twitter Cards** — `cardType`, `site`, `handle`, `title`, `description`, `image`, `imageAlt`
+- ✅ **Twitter Cards** - `cardType`, `site`, `handle`, `title`, `description`, `image`, `imageAlt`
 - ✅ Customizable robots meta tags
 - ✅ Canonical URLs (with dev-mode warning when relative)
 - ✅ Language alternates (hreflang)
 - ✅ Custom additional meta tags
 - ✅ Custom additional link tags
-- ✅ Compatible with Astro 4.x, 5.x, and 6.x
-- ✅ Compatible with TypeScript 5.x and 6.x
-- ✅ Unit tested with Vitest (53 tests)
-- ✅ **JSON-LD support** — pass any Schema.org object as a prop, rendered as XSS-safe `<script type="application/ld+json">`
+- ✅ Compatible with Astro 4.x, 5.x, 6.x, and 7.x
+- ✅ **Astro integration** - `astroSeo({ site })` sets `site`, enables `npx astro add`, and lets `<AstroHead />` resolve relative URLs to absolute via `Astro.site`
+- ✅ Compatible with TypeScript 5.x
+- ✅ Unit tested with Vitest (54 tests)
+- ✅ **JSON-LD support** - pass any Schema.org object as a prop, rendered as XSS-safe `<script type="application/ld+json">`
 
 ## 🆕 What's New in v3
 
@@ -41,7 +42,7 @@ An enhanced, maintained version of `@astrolib/seo` with properly exported TypeSc
 />
 ```
 
-Only the fields you set are emitted — Twitter natively falls back to `og:*` for anything you omit, so there's no duplication.
+Only the fields you set are emitted - Twitter natively falls back to `og:*` for anything you omit, so there's no duplication.
 
 ### JSON-LD with autocomplete
 
@@ -62,7 +63,7 @@ const orgSchema: JsonLdObject = {
 
 ### Stricter `MetaTag` typing
 
-`additionalMetaTags[]` entries must now declare exactly one of `name`, `property`, or `httpEquiv` — TypeScript rejects entries that mix or omit them, and runtime skips invalid entries (with a dev warning) instead of emitting bad HTML.
+`additionalMetaTags[]` entries must now declare exactly one of `name`, `property`, or `httpEquiv` - TypeScript rejects entries that mix or omit them, and runtime skips invalid entries (with a dev warning) instead of emitting bad HTML.
 
 ## 🔧 How TypeScript Types Work
 
@@ -95,6 +96,28 @@ pnpm add @northsoon/astro-seo
 # yarn
 yarn add @northsoon/astro-seo
 ```
+
+### Astro integration (recommended)
+
+```bash
+npx astro add @northsoon/astro-seo
+```
+
+Or manually in `astro.config.mjs`:
+
+```js
+import { defineConfig } from "astro/config";
+import astroSeo from "@northsoon/astro-seo";
+
+export default defineConfig({
+  site: "https://mysite.com",
+  integrations: [astroSeo()],
+});
+```
+
+The integration sets `site` when missing (so `Astro.site` is available) and warns when the integration `site` option differs from the Astro config. `<AstroHead />` then resolves relative `canonical`, `openGraph.url`, media URLs and `twitter.image` to absolute URLs automatically. You can also pass `site` directly as a prop - the prop wins over `Astro.site`.
+
+> The package root exposes the integration to Node contexts (`astro.config.mjs`, `astro add`) and the component to Astro pages automatically via export conditions. An explicit subpath is also available: `import astroSeo from "@northsoon/astro-seo/integration"`.
 
 ## 🚀 Quick Start
 
@@ -154,7 +177,7 @@ import { AstroHead } from "@northsoon/astro-seo";
       cardType: "summary_large_image",
       site: "@mysite",
       handle: "@myhandle",
-      // Optional — only emit when you want different values than og:*
+      // Optional - only emit when you want different values than og:*
       title: "Tweet-specific title",
       description: "Tweet-specific summary (Twitter falls back to og:description otherwise)",
       image: "https://mysite.com/twitter-card.jpg",
@@ -359,12 +382,18 @@ npx astro check
 # Should show: 0 errors ✓
 ```
 
+## 🔁 Migration from v3.0
+
+- **Default export changed:** `import AstroHead from "@northsoon/astro-seo"` now returns the `astroSeo()` integration (so `npx astro add` works). Use the named import instead - `import { AstroHead } from "@northsoon/astro-seo"` - which is what all README examples already use.
+- **`site` prop (new, optional):** pass `site="https://mysite.com"` or rely on `Astro.site`. Relative URLs are then emitted absolute. Without `site`, behavior is unchanged (relative URLs kept, dev warning).
+- **Dangerous URL schemes** (`javascript:`, `data:`, `vbscript:`) in URL props are now skipped (with a dev warning) instead of emitted.
+
 ## 🔁 Migration from v2
 
 v3.0.0 is mostly additive, but a few changes can surface type errors in code that compiled under v2:
 
-- **`MetaTag` is now a true discriminated union.** Entries in `additionalMetaTags` must declare exactly one of `name`, `property`, or `httpEquiv`. Entries missing all three were silently emitted as invalid `<meta content="…">` in v2 — in v3 they are skipped (with a dev warning) and TypeScript will flag them at build time.
-- **`jsonLd` is now typed as `JsonLdObject` instead of `Record<string, unknown>`.** Existing usage keeps working — `JsonLdObject` is `{ "@context"?, "@type"? } & Record<string, unknown>` — but you now get IDE autocomplete for `@context` and common Schema.org `@type` values.
+- **`MetaTag` is now a true discriminated union.** Entries in `additionalMetaTags` must declare exactly one of `name`, `property`, or `httpEquiv`. Entries missing all three were silently emitted as invalid `<meta content="…">` in v2 - in v3 they are skipped (with a dev warning) and TypeScript will flag them at build time.
+- **`jsonLd` is now typed as `JsonLdObject` instead of `Record<string, unknown>`.** Existing usage keeps working - `JsonLdObject` is `{ "@context"?, "@type"? } & Record<string, unknown>` - but you now get IDE autocomplete for `@context` and common Schema.org `@type` values.
 - **Internal file renamed**: `src/AstroSeo.astro` → `src/AstroHead.astro`. Public API unchanged (still `import { AstroHead }`). Only affects code doing deep imports.
 
 No runtime behavior changed for code that was already correctly typed.
@@ -387,7 +416,7 @@ In **v2.0.0** the component was renamed from `AstroSeo` to `AstroHead` to have a
 
 ### Removed props
 
-`OpenGraph.defaultImageWidth` and `OpenGraph.defaultImageHeight` have been removed. They were accepted by TypeScript but never rendered any tag — silently doing nothing. Remove them from your config:
+`OpenGraph.defaultImageWidth` and `OpenGraph.defaultImageHeight` have been removed. They were accepted by TypeScript but never rendered any tag - silently doing nothing. Remove them from your config:
 
 ```diff
   openGraph={{
@@ -398,7 +427,7 @@ In **v2.0.0** the component was renamed from `AstroSeo` to `AstroHead` to have a
   }}
 ```
 
-Use `images[].width` and `images[].height` instead — those are the props that actually generate the `og:image:width` and `og:image:height` tags.
+Use `images[].width` and `images[].height` instead - those are the props that actually generate the `og:image:width` and `og:image:height` tags.
 
 ### Bug fix: `maxVideoPreview` now works
 
@@ -443,18 +472,31 @@ npm list @northsoon/astro-seo
 
 ## 📋 Changelog
 
+### v3.2.0
+
+- **Feat:** Astro 7 support - `peerDependencies` now `"^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"`, dev against Astro 7.3.x, verified end-to-end (config load, absolute URLs, build output identical to Astro 6)
+- No API or behavior changes
+
+### v3.1.0
+
+- **Feat:** real Astro integration - `export default astroSeo({ site })`, enables `npx astro add`, sets `site` in Astro config when missing, warns on mismatch or invalid `site`
+- **Feat:** `site` prop + `Astro.site` fallback - relative `canonical`, `openGraph.url`, OG media URLs, `twitter.image`, and alternate hrefs resolve to absolute URLs when a site is known
+- **Security fix:** URL props with `javascript:`, `data:`, or `vbscript:` schemes (including leading-whitespace/case variants) are skipped with a dev warning instead of emitted into `<link>`/`<meta>` tags
+- **Docs:** integration setup, branding unified under Northsoon Studio
+- **Test:** 9 new tests - dangerous schemes, `site` resolution, absolute passthrough
+
 ### v3.0.0
 
-- **Feat:** Full Twitter Cards support — `twitter.title`, `twitter.description`, `twitter.image`, `twitter.imageAlt`
-- **Feat:** `JsonLdObject` type — `@context` and `@type` autocomplete for the `jsonLd` prop, with `SchemaOrgType` helper
+- **Feat:** Full Twitter Cards support - `twitter.title`, `twitter.description`, `twitter.image`, `twitter.imageAlt`
+- **Feat:** `JsonLdObject` type - `@context` and `@type` autocomplete for the `jsonLd` prop, with `SchemaOrgType` helper
 - **Feat:** Dev-mode `console.warn` when `canonical`, `openGraph.url`, OG media URLs, or `twitter.image` are relative
 - **Fix:** `titleTemplate` no longer interprets `$&`, `$1`, `$$` in `title` as replacement patterns (uses `split`/`join` instead of `replaceAll`)
 - **Fix:** `additionalMetaTags` entries without `name`/`property`/`httpEquiv` are skipped (and warn in dev) instead of emitting invalid `<meta>`
 - **Refactor:** Unified `createMetaTag` / `createLinkTag` through a single `createTag` helper
-- **Refactor:** `MetaTag` is now a true discriminated union — TypeScript rejects entries that mix or omit discriminators
+- **Refactor:** `MetaTag` is now a true discriminated union - TypeScript rejects entries that mix or omit discriminators
 - **Refactor:** `buildJsonLd` uses a single-pass regex for the XSS escape (same guarantee, fewer allocations)
 - **Chore:** Renamed `src/AstroSeo.astro` → `src/AstroHead.astro` to match the exported name
-- **Test:** added 9 new tests — `$&` regression, http-equiv tags, invalid `additionalMetaTags`, Twitter title/description/image/imageAlt, no-duplication fallback
+- **Test:** added 9 new tests - `$&` regression, http-equiv tags, invalid `additionalMetaTags`, Twitter title/description/image/imageAlt, no-duplication fallback
 
 ### v2.1.2
 
@@ -466,17 +508,17 @@ npm list @northsoon/astro-seo
 
 ### v2.1.0
 
-- Feat: `jsonLd` prop — pass any Schema.org object (or array of objects) to generate a `<script type="application/ld+json">` tag automatically
+- Feat: `jsonLd` prop - pass any Schema.org object (or array of objects) to generate a `<script type="application/ld+json">` tag automatically
 - Test: added 6 unit tests for `buildJsonLd` covering LocalBusiness, WebSite, BreadcrumbList, FAQPage, and arrays
 
 ### v2.0.5
 
-- Fix: `titleTemplate` now uses `replaceAll` — correctly replaces all occurrences of `%s` instead of only the first
+- Fix: `titleTemplate` now uses `replaceAll` - correctly replaces all occurrences of `%s` instead of only the first
 - Test: added unit tests with Vitest covering title, description, robots, canonical, Open Graph, Twitter, hreflang, and additionalMetaTags
 
 ### v2.0.4
 
-- Fix: `src/astro.d.ts` and `src/env.d.ts` (dev-only files) no longer shipped in the npm package — prevents potential type conflicts in user projects
+- Fix: `src/astro.d.ts` and `src/env.d.ts` (dev-only files) no longer shipped in the npm package - prevents potential type conflicts in user projects
 - Fix: `package.json` `files` field is now explicit, only shipping the files users actually need
 
 ### v2.0.3
@@ -485,11 +527,11 @@ npm list @northsoon/astro-seo
 
 ### v2.0.2
 
-- Updated TypeScript to 6.0.3 (build tool only — no impact on your project's TypeScript version)
+- Updated TypeScript to 6.0.3 (build tool only - no impact on your project's TypeScript version)
 
 ### v2.0.1
 
-- Fix: peer dependency updated to `"^4.0.0 || ^5.0.0 || ^6.0.0"` — removes Astro 6 install warning
+- Fix: peer dependency updated to `"^4.0.0 || ^5.0.0 || ^6.0.0"` - removes Astro 6 install warning
 
 ### v2.0.0
 
@@ -500,9 +542,9 @@ npm list @northsoon/astro-seo
 
 ## 📄 License
 
-MIT © [Manuel Caballero](https://github.com/VVV-WIT-07-DEV)
+MIT © [Northsoon Studio](https://northsoon.com)
 
-Made with ❤️ by [Northsoon](https://northsoon.com)
+Made with ❤️ by [Northsoon Studio](https://northsoon.com)
 
 ---
 

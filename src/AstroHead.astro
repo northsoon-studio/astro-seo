@@ -6,7 +6,11 @@ import { buildJsonLd } from "./utils/buildJsonLd";
 export interface Props extends AstroSeoProps {}
 
 const { jsonLd, ...seoProps } = Astro.props;
+// Prefer the explicit `site` prop, fall back to Astro.site (set via
+// astro.config.mjs `site` or the astroSeo() integration). When available,
+// buildTags resolves relative URLs into absolute ones.
+const site = seoProps.site ?? Astro.site?.href;
 ---
 
-<Fragment set:html={buildTags(seoProps)} />
+<Fragment set:html={buildTags({ ...seoProps, site })} />
 {jsonLd && <Fragment set:html={buildJsonLd(jsonLd)} />}

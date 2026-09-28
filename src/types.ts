@@ -168,6 +168,13 @@ export type JsonLdObject = {
 export interface AstroSeoProps {
   title?: string;
   titleTemplate?: string;
+  /**
+   * Site origin used to resolve relative URLs (canonical, openGraph, twitter,
+   * alternates) into absolute URLs. Falls back to `Astro.site` when the
+   * integration (or `site` in `astro.config.mjs`) provides it.
+   * @example "https://northsoon.com"
+   */
+  site?: string;
   noindex?: boolean;
   nofollow?: boolean;
   robotsProps?: AdditionalRobotsProps;
